@@ -7,6 +7,7 @@ import * as F from '../sim/fisica.js';
 import { fmt, fmtTiempo, fmtDuracion } from './formato.js';
 import * as G from './graficos.js';
 import { COLOR_ESPECIE } from '../escena/lupa.js';
+import { EXPERIMENTO, PASOS } from '../data/recorrido.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -376,7 +377,8 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
     const pastilla = $('#pastilla');
     pastilla.dataset.fase = est.fase;
     pastilla.dataset.at = est.altaTension ? '1' : '0';
-    $('#pastilla-txt').textContent = est.paro ? 'Paro' : proceso.pausado ? 'En pausa' : est.altaTension && !est.plasma ? 'AT sin descarga' : fNombre;
+    const presentando = $('#app').dataset.presentando === '1';
+    $('#pastilla-txt').textContent = est.paro ? 'Paro' : proceso.pausado && !presentando ? 'En pausa' : est.altaTension && !est.plasma ? 'AT sin descarga' : fNombre;
     $('#reloj').textContent = `t = ${fmtTiempo(est.tSim)} · ×${fmt(est.velocidad, 0)}`;
 
     // Lecturas
@@ -539,6 +541,29 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
   const ficha = $('#ficha');
   const marcaResp = (r) => `<span class="marca-resp" data-r="${r}">${r === 'revision' ? 'Revisión' : 'Ingeniería'}</span>`;
   const secciones = {
+    experimento: () => {
+      const E = EXPERIMENTO;
+      const total = PASOS.reduce((a, x) => a + x.duracionSeg, 0);
+      return `
+      <p><b>${esc(E.titulo)}.</b> ${esc(E.pregunta)}</p>
+      <div class="tabla-ficha-wrap"><table class="tabla-ficha">
+        <tbody>
+          <tr><th>Hipótesis</th><td>${esc(E.hipotesis)}</td></tr>
+          <tr><th>Caso de referencia</th><td>${esc(E.casoReferencia || '')}</td></tr>
+          <tr><th>Variable independiente</th><td>${esc(E.variableIndependiente)}</td></tr>
+          <tr><th>Variables dependientes</th><td>${E.variablesDependientes.map(esc).join('<br>')}</td></tr>
+          <tr><th>Variables controladas</th><td>${E.variablesControladas.map(esc).join('<br>')}</td></tr>
+          <tr><th>Control</th><td>${esc(E.control || '')}</td></tr>
+          <tr><th>Réplicas</th><td>${esc(E.replicas || '')}</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Recorrido de la presentación (${fmtDuracion(total)})</h3>
+      <div class="tabla-ficha-wrap"><table class="tabla-ficha">
+        <thead><tr><th>N.º</th><th>Etapa</th><th>Paso</th><th>Tiempo</th><th>En pantalla</th></tr></thead>
+        <tbody>${PASOS.map((x, i) => `<tr><td class="mono">${i + 1}</td><td>${esc(x.fase)}</td><td>${esc(x.titulo)}</td><td class="mono">${fmt(x.duracionSeg, 0)} s</td><td>${esc(x.textoPantalla)}</td></tr>`).join('')}</tbody>
+      </table></div>
+      ${E.respaldo?.length ? `<h3>Respaldo</h3><ul class="lista-simple">${E.respaldo.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>` : ''}`;
+    },
     diseno: () => `
       <p>Banco de descarga de barrera dieléctrica (DBD) a presión atmosférica, de escala de laboratorio, para tratar lotes de alimentos o residuos con plasma frío. Se eligió la DBD porque es la configuración con más evidencia en la revisión, enciende con una tensión del orden de 10 kV, opera con aire, N₂, Ar o He y admite el tratamiento dentro del envase. A presión atmosférica se prescinde del equipo de vacío, y sin magnetrón se evita la alta inversión de las descargas de microondas (Okyere et al., 2022; Keramat y Golmakani, 2025).</p>
       <p>Cada instrumento responde a una variable que la revisión identifica como determinante: el gas, la humedad, la distancia, el tiempo, la masa, la temperatura del sustrato y la energía entregada.</p>
@@ -602,7 +627,8 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
   ficha.innerHTML = `
     <div class="ficha-cab"><h2 id="ficha-titulo">Ficha técnica del banco</h2><button type="button" class="cerrar" aria-label="Cerrar ficha">✕</button></div>
     <div class="pestanas" role="tablist">
-      <button type="button" role="tab" data-f="diseno" aria-selected="true">Diseño</button>
+      <button type="button" role="tab" data-f="experimento" aria-selected="true">Experimento</button>
+      <button type="button" role="tab" data-f="diseno" aria-selected="false">Diseño</button>
       <button type="button" role="tab" data-f="partes" aria-selected="false">Lista de partes</button>
       <button type="button" role="tab" data-f="instrumentos" aria-selected="false">Instrumentos</button>
       <button type="button" role="tab" data-f="cobertura" aria-selected="false">Cobertura de la literatura</button>
@@ -617,11 +643,11 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
   ficha.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => mostrarFicha(b.dataset.f)));
   ficha.querySelector('.cerrar').addEventListener('click', () => ficha.close());
   $('#btn-ficha').addEventListener('click', () => {
-    mostrarFicha('diseno');
+    mostrarFicha('experimento');
     ficha.showModal();
   });
 
   sincronizarControles();
   actualizarBotones();
-  return { actualizar, mostrarParte, sincronizarControles };
+  return { actualizar, mostrarParte, sincronizarControles, elegirTab };
 }

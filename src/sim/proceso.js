@@ -174,6 +174,36 @@ export class Proceso {
     this.emitir('fase');
   }
 
+  // Salto directo a un estado de la secuencia (modo Presentar). Cada paso del recorrido parte de cero,
+  // así avanzar o retroceder deja el banco en un estado coherente.
+  // fase: 'reposo' | 'purga' | 'tratamiento' (con avance 0–1 del tiempo de exposición) | 'postpurga' | 'final'
+  irAFase(fase, avance = 0) {
+    this.reiniciar();
+    if (fase === 'reposo' || !fase) {
+      this.emitir('fase');
+      return;
+    }
+    this.flujo = true;
+    if (fase === 'purga') {
+      this.fase = 'purga';
+      this.registrar('Purga: 3 volúmenes de cámara con el gas de trabajo.');
+      this.emitir('fase');
+      return;
+    }
+    this.fase = 'tratamiento';
+    this.Vact = this.p.V;
+    this.actualizarDescarga();
+    this.registrar('Inicio del tiempo de exposición.');
+    const objetivo = Math.max(0, Math.min(1, avance)) * this.p.t;
+    for (let i = 0; i < 40000; i++) {
+      if (fase === 'tratamiento' && (this.fase !== 'tratamiento' || this.tFase >= objetivo)) break;
+      if (fase === 'postpurga' && this.fase === 'postpurga') break;
+      if (fase === 'final' && this.fase === 'listo') break;
+      this._paso(0.5);
+    }
+    this.emitir('fase');
+  }
+
   detener() {
     if (this.fase === 'reposo') return;
     this.Vact = 0;

@@ -11,6 +11,8 @@ import { crearLupa } from './escena/lupa.js';
 import { Proceso, consignasMFC, FASES } from './sim/proceso.js';
 import * as F from './sim/fisica.js';
 import { crearHUD } from './ui/hud.js';
+import { crearPresentacion } from './ui/presentacion.js';
+import { EXPERIMENTO, PASOS } from './data/recorrido.js';
 import { PARTES } from './data/banco.js';
 import { fmt } from './ui/formato.js';
 
@@ -102,16 +104,16 @@ $('#tg-etiquetas').addEventListener('click', (e) => {
   e.currentTarget.setAttribute('aria-pressed', String(verEtiquetas));
 });
 let verLupa = true;
-$('#tg-lupa').addEventListener('click', (e) => {
-  verLupa = !verLupa;
-  e.currentTarget.setAttribute('aria-pressed', String(verLupa));
+function fijarLupa(v) {
+  verLupa = v;
+  $('#tg-lupa').setAttribute('aria-pressed', String(v));
   $('#lupa').hidden = !verLupa || despiece > 0.02;
-});
+}
+$('#tg-lupa').addEventListener('click', () => fijarLupa(!verLupa));
 let despiece = 0;
-$('#rng-despiece').addEventListener('input', (e) => {
-  const v = Number(e.target.value) / 100;
-  if (despiece === 0 && v > 0 && vistaActual !== 'despiece') irA('despiece');
+function fijarDespiece(v) {
   despiece = v;
+  $('#rng-despiece').value = Math.round(v * 100);
   $('#out-despiece').textContent = `${Math.round(v * 100)} %`;
   reactor.setDespiece(v);
   const oculto = v > 0.02;
@@ -119,6 +121,11 @@ $('#rng-despiece').addEventListener('input', (e) => {
   inst.conexiones.visible = !oculto;
   $('#lupa').hidden = !verLupa || oculto;
   $('#lista-despiece').hidden = v < 0.3;
+}
+$('#rng-despiece').addEventListener('input', (e) => {
+  const v = Number(e.target.value) / 100;
+  if (despiece === 0 && v > 0 && vistaActual !== 'despiece') irA('despiece');
+  fijarDespiece(v);
 });
 
 // ---------------- Proceso e interfaz ----------------
@@ -412,8 +419,10 @@ function redimensionar() {
   camara.aspect = w / h;
   let desplazamiento = 0;
   if (window.innerWidth > 860) {
-    const izq = $('#consola').getBoundingClientRect().right;
-    const der = $('#instrumentos').getBoundingClientRect().left;
+    const pi = $('#consola');
+    const pd = $('#instrumentos');
+    const izq = pi.offsetParent ? pi.getBoundingClientRect().right : 0;
+    const der = pd.offsetParent ? pd.getBoundingClientRect().left : w;
     desplazamiento = (izq + der) / 2 - w / 2;
   }
   camara.setViewOffset(w, h, -desplazamiento, 0, w, h);
@@ -452,6 +461,7 @@ function cuadro() {
     inst.dibujar(est);
     dibujarPantallasGas(est);
   }
+  presentacion.actualizar(dt);
   actualizarCaja();
   actualizarEtiquetas();
   hud.actualizar(est, dt);
@@ -479,7 +489,20 @@ function cuadro() {
     $('#lupa-info').textContent = est.plasma ? (est.difusa ? 'descarga difusa' : 'microdescargas') : 'esquemático, sin escala';
   }
 }
-cuadro();
+
+// ---------------- Modo Presentar ----------------
+function mostrarPanel(tab) {
+  $('#app').dataset.panelPres = tab ? '1' : '0';
+  if (tab) hud.elegirTab(tab);
+  window.dispatchEvent(new Event('resize'));
+}
+const presentacion = crearPresentacion({
+  experimento: EXPERIMENTO,
+  pasos: PASOS,
+  ctx: { proceso, irA, fijarCorte, fijarDespiece, fijarLupa, seleccionar, mostrarPanel },
+});
 
 // Acceso desde la consola del navegador (depuración y demostraciones).
-window.bancoDBD = { proceso, irA, seleccionar };
+window.bancoDBD = { proceso, irA, seleccionar, presentacion };
+
+cuadro();

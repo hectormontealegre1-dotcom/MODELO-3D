@@ -218,7 +218,7 @@ const ETQ = [
   { id: 'sensorHR', texto: 'Humedad', tag: 'MT-201', pos: [-0.3, 0.985, -0.13], nivel: 2 },
   { id: 'jaula', texto: 'Reactor DBD', tag: 'jaula de Faraday', pos: [-0.1, 1.42, 0.21] },
   { id: 'fuente', texto: 'Fuente de alta tensión', tag: 'EI-401', pos: [0.45, 1.09, 0.11] },
-  { id: 'osciloscopio', texto: 'Osciloscopio', tag: 'II-402 · JI-403', pos: [0.74, 1.08, -0.17] },
+  { id: 'osciloscopio', texto: 'Osciloscopio', tag: 'II-402 · JI-403', pos: [0.74, 1.08, -0.17], nivel: 2 },
   { id: 'espectrometro', texto: 'Espectrómetro', tag: 'AI-501', pos: [0.1, 0.965, -0.29], nivel: 2 },
   { id: 'camaraIR', texto: 'Cámara IR', tag: 'TI-302', pos: [-0.37, 1.085, -0.05], nivel: 2 },
   { id: 'monitorO3', texto: 'Monitor de O₃', tag: 'AI-502', pos: [0.3, 1.04, -0.27] },
@@ -235,7 +235,7 @@ const ETQ = [
   el.innerHTML = `${e.tag ? `<b>${e.tag}</b>` : ''}${e.texto}`;
   el.addEventListener('click', () => seleccionar(e.id));
   capa.appendChild(el);
-  return { ...e, el, v: new THREE.Vector3(...e.pos) };
+  return { ...e, el, v: new THREE.Vector3(...e.pos), ancho: 22 + 6.6 * (e.texto.length + (e.tag ? e.tag.length + 1 : 0)) };
 });
 // Globos numerados del despiece con líneas guía y lista de piezas
 const globos = reactor.piezasDespiece.map(() => {
@@ -263,14 +263,35 @@ guias.frustumCulled = false;
 scene.add(guias);
 
 const tmpV = new THREE.Vector3();
-let rectLupa = null;
-function proyectar(v, el, w, h, alinear = 'translate(-50%, -100%)') {
+// Rectángulos ya ocupados en pantalla (paneles, tarjetas, lupa y etiquetas puestas en este cuadro).
+// Una etiqueta que choca con uno de ellos no se dibuja; las de mayor prioridad se colocan primero.
+let ocupados = [];
+const OVERLAYS = ['#consola', '#instrumentos', '.vistas', '#lupa', '#pieza', '#alarmas', '#tarjeta-paso', '#barra-pres', '#notas-orador', '#lista-despiece'];
+function medirOverlays() {
+  const rc = canvas.getBoundingClientRect();
+  ocupados = [];
+  for (const sel of OVERLAYS) {
+    const el = document.querySelector(sel);
+    if (!el || el.hidden || el.offsetParent === null) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) continue;
+    ocupados.push({ x0: r.left - rc.left, y0: r.top - rc.top, x1: r.right - rc.left, y1: r.bottom - rc.top });
+  }
+}
+const choca = (r) => ocupados.some((o) => r.x0 < o.x1 && r.x1 > o.x0 && r.y0 < o.y1 && r.y1 > o.y0);
+function proyectar(v, el, w, h, alinear = 'translate(-50%, -100%)', ancho = 0, alto = 0) {
   tmpV.copy(v).project(camara);
   const x = ((tmpV.x + 1) / 2) * w;
   const y = ((1 - tmpV.y) / 2) * h;
-  // las etiquetas no se dibujan sobre la lupa, que se pinta en el mismo lienzo
-  const sobreLupa = rectLupa && x > rectLupa.left - 60 && x < rectLupa.right + 20 && y > rectLupa.top && y < rectLupa.bottom + 24;
-  const visible = tmpV.z < 1 && tmpV.x > -1.1 && tmpV.x < 1.1 && tmpV.y > -1.1 && tmpV.y < 1.1 && !sobreLupa;
+  let visible = tmpV.z < 1 && tmpV.x > -1.1 && tmpV.x < 1.1 && tmpV.y > -1.1 && tmpV.y < 1.1;
+  if (visible && ancho) {
+    const centrada = alinear.includes('-50%, -50%');
+    const r = centrada
+      ? { x0: x - ancho / 2, y0: y - alto / 2, x1: x + ancho / 2, y1: y + alto / 2 }
+      : { x0: x - ancho / 2, y0: y - alto - 2, x1: x + ancho / 2, y1: y };
+    if (choca(r)) visible = false;
+    else ocupados.push(r);
+  }
   el.style.display = visible ? '' : 'none';
   if (visible) el.style.transform = `translate(${x}px, ${y}px) ${alinear}`;
 }
@@ -278,17 +299,12 @@ const cajaTmp = new THREE.Box3();
 function actualizarEtiquetas() {
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
-  const lupaVisible = verLupa && lupaEl.offsetParent !== null && despiece < 0.02;
-  if (lupaVisible) {
-    const rc = canvas.getBoundingClientRect();
-    const rl = lupaEl.getBoundingClientRect();
-    rectLupa = { left: rl.left - rc.left, right: rl.right - rc.left, top: rl.top - rc.top, bottom: rl.bottom - rc.top };
-  } else rectLupa = null;
+  medirOverlays();
   const enDespiece = despiece > 0.3;
   for (const e of ETQ) {
     const cerca = vistaActual === 'general' ? e.nivel !== 2 : camara.position.distanceTo(e.v) < 1.25;
     if (!verEtiquetas || enDespiece || !cerca || vistaActual === 'descarga') e.el.style.display = 'none';
-    else proyectar(e.v, e.el, w, h);
+    else proyectar(e.v, e.el, w, h, undefined, e.ancho, 24);
   }
   guias.visible = enDespiece && verEtiquetas;
   reactor.piezasDespiece.forEach((pz, i) => {
@@ -308,7 +324,7 @@ function actualizarEtiquetas() {
       el.setAttribute('aria-label', `${info.n}. ${info.nombre}`);
       el.onclick = () => seleccionar(pz.partId);
     }
-    proyectar(b, el, w, h, 'translate(-50%, -50%)');
+    proyectar(b, el, w, h, 'translate(-50%, -50%)', 24, 24);
   });
   guiaGeo.attributes.position.needsUpdate = true;
 }
@@ -359,6 +375,7 @@ function estado(dt) {
     tTrat: proceso.tTrat,
     velocidad: proceso.velocidadFase(),
     color: F.colorPlasma(comp),
+    distCamara: camara.position.distanceTo(reactor.anclas.centroDescarga),
     difusa: F.esDifusa(comp),
     colorNeblina: [neb.r, neb.g, neb.b],
     especies,

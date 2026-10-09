@@ -29,19 +29,20 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
   portada.innerHTML = `
     <div class="portada-tarjeta">
       <p class="eyebrow">Seminario «Pirólisis en frío» · Experimento de banco</p>
-      <h1 id="portada-titulo">${esc(experimento.titulo)}</h1>
+      <h1 id="portada-titulo">${esc(experimento.tituloCorto)}</h1>
+      <p class="subtitulo">${esc(experimento.titulo)}</p>
       <p class="pregunta">${esc(experimento.pregunta)}</p>
       <div class="hipotesis"><b>Hipótesis</b><span>${esc(experimento.hipotesis)}</span></div>
       <dl class="variables">
-        <div><dt>Variable independiente</dt><dd>${esc(experimento.variableIndependiente)}</dd></div>
-        <div><dt>Variables dependientes</dt><dd>${experimento.variablesDependientes.map(esc).join('<br>')}</dd></div>
-        <div><dt>Variables controladas</dt><dd>${experimento.variablesControladas.map(esc).join('<br>')}</dd></div>
+        <div><dt>Variable independiente</dt><dd>${experimento.resumen.independiente.map(esc).join('<br>')}</dd></div>
+        <div><dt>Variables dependientes</dt><dd>${experimento.resumen.dependientes.map(esc).join('<br>')}</dd></div>
+        <div><dt>Variables controladas</dt><dd>${experimento.resumen.controladas.map(esc).join('<br>')}</dd></div>
       </dl>
       <div class="portada-acciones">
         <button type="button" class="boton primario grande" id="btn-portada-presentar">Presentar · ${Math.round(total / 60)} min</button>
         <button type="button" class="boton grande" id="btn-portada-explorar">Explorar el modelo</button>
       </div>
-      <p class="nota">Modelo explicativo construido solo con la revisión bibliográfica del seminario. Lo que no proviene de ella se declara como supuesto de ingeniería en la «Ficha técnica». Use → o Espacio para avanzar y Esc para salir.</p>
+      <p class="nota">Modelo explicativo construido solo con la revisión bibliográfica del seminario. Lo que no proviene de ella se declara como supuesto de ingeniería en la «Ficha técnica». Durante el recorrido: → o Espacio avanza, ← retrocede, N muestra las notas del orador y Esc sale.</p>
     </div>`;
   app.appendChild(portada);
 
@@ -61,6 +62,7 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
       <div class="bp-texto" aria-live="polite"><h2 id="bp-titulo"></h2><p id="bp-desc"></p></div>
       <div class="bp-ctrl">
         <div class="bp-reloj"><time id="bp-reloj">00:00</time><small>de ${fmtTiempo(total)}</small></div>
+        <button type="button" class="boton" id="bp-notas" aria-pressed="false" title="Notas del orador (N)">Notas</button>
         <button type="button" class="boton" id="bp-ant" aria-label="Paso anterior">←</button>
         <button type="button" class="boton primario" id="bp-sig">Siguiente →</button>
         <button type="button" class="boton" id="bp-salir">Salir</button>
@@ -73,6 +75,26 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
   tarjeta.id = 'tarjeta-paso';
   tarjeta.hidden = true;
   app.appendChild(tarjeta);
+
+  const notas = document.createElement('section');
+  notas.className = 'notas-orador';
+  notas.id = 'notas-orador';
+  notas.hidden = true;
+  notas.setAttribute('aria-label', 'Notas del orador');
+  app.appendChild(notas);
+  let verNotas = false;
+  function pintarNotas() {
+    const paso = pasos[idx];
+    notas.hidden = !(activo && verNotas);
+    $('#bp-notas').setAttribute('aria-pressed', String(verNotas));
+    notas.innerHTML = `<header><b>Notas del orador · paso ${idx + 1}</b><small>${paso.duracionSeg} s sugeridos</small></header>
+      <p>${esc(paso.guionOral)}</p>
+      <dl><dt>Qué mostrar</dt><dd>${esc(paso.queMirar || '')}</dd><dt>Mensaje clave</dt><dd>${esc(paso.mensajeClave || '')}</dd></dl>`;
+  }
+  const alternarNotas = () => {
+    verNotas = !verNotas;
+    pintarNotas();
+  };
 
   const segs = [...barra.querySelectorAll('.bp-seg')];
 
@@ -94,7 +116,7 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     // Estado de partida limpio
     if (p.paro) p.pararEmergencia();
     if (p.puertaAbierta) p.alternarPuerta();
-    if (a.caso && p.p.caso !== a.caso) p.set('caso', a.caso);
+    if (a.caso) p.set('caso', a.caso);
     if (a.gas && p.p.gas !== a.gas) p.set('gas', a.gas);
     ctx.fijarDespiece(a.despiece ?? 0);
     ctx.fijarCorte(a.corte ?? false);
@@ -128,6 +150,7 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     $('#bp-desc').textContent = paso.textoPantalla;
     $('#bp-ant').disabled = idx === 0;
     $('#bp-sig').textContent = idx === pasos.length - 1 ? 'Terminar' : 'Siguiente →';
+    pintarNotas();
     segs.forEach((s, j) => {
       s.dataset.estado = j < idx ? 'hecho' : j === idx ? 'activo' : 'pendiente';
       s.setAttribute('aria-selected', String(j === idx));
@@ -136,9 +159,10 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     });
   }
 
-  function iniciar(desde = 0) {
+  // reanudar = volver al paso en que se salió, conservando el cronómetro total
+  function iniciar(desde = 0, reanudar = false) {
     activo = true;
-    tTotal = 0;
+    if (!reanudar) tTotal = 0;
     portada.hidden = true;
     barra.hidden = false;
     app.dataset.presentando = '1';
@@ -152,6 +176,7 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     activo = false;
     barra.hidden = true;
     tarjeta.hidden = true;
+    notas.hidden = true;
     app.dataset.presentando = '0';
     ctx.mostrarPanel(null);
     ctx.fijarLupa(true);
@@ -161,19 +186,34 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     window.dispatchEvent(new Event('resize'));
   }
 
-  const siguiente = () => (idx === pasos.length - 1 ? salir() : aplicar(idx + 1));
+  let terminado = false;
+  const siguiente = () => {
+    if (idx === pasos.length - 1) {
+      terminado = true;
+      salir();
+    } else aplicar(idx + 1);
+  };
   const anterior = () => aplicar(idx - 1);
 
   // ---------------- Eventos ----------------
-  $('#btn-portada-presentar').addEventListener('click', () => iniciar(0));
+  $('#btn-portada-presentar').addEventListener('click', () => {
+    terminado = false;
+    iniciar(0);
+  });
   $('#btn-portada-explorar').addEventListener('click', () => {
     portada.hidden = true;
   });
   $('#bp-sig').addEventListener('click', siguiente);
   $('#bp-ant').addEventListener('click', anterior);
   $('#bp-salir').addEventListener('click', salir);
+  $('#bp-notas').addEventListener('click', alternarNotas);
   segs.forEach((s) => s.addEventListener('click', () => aplicar(Number(s.dataset.i))));
-  $('#btn-presentar').addEventListener('click', () => (activo ? salir() : iniciar(0)));
+  $('#btn-presentar').addEventListener('click', () => {
+    if (activo) return salir();
+    const reanudar = !terminado && (idx > 0 || tTotal > 0);
+    terminado = false;
+    iniciar(reanudar ? idx : 0, reanudar);
+  });
 
   window.addEventListener('keydown', (e) => {
     const t = e.target;
@@ -192,6 +232,9 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     } else if (['ArrowLeft', 'PageUp'].includes(e.key)) {
       e.preventDefault();
       anterior();
+    } else if (e.key === 'n' || e.key === 'N') {
+      e.preventDefault();
+      alternarNotas();
     } else if (e.key === 'Home') {
       e.preventDefault();
       aplicar(0);

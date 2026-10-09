@@ -352,6 +352,20 @@ select.campo, input.campo {
 }
 .portada .eyebrow { margin: 0; font: 600 12.5px/1.2 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
 .portada h1 { margin: 0; font: 700 clamp(30px, 4.2vw, 46px)/1.02 var(--font-display); letter-spacing: 0.005em; text-wrap: balance; }
+.portada .subtitulo { margin: -8px 0 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); max-width: 80ch; }
+.notas-orador {
+  position: absolute; right: 16px; bottom: calc(var(--pres-h) + 24px); width: min(520px, calc(100% - 32px)); z-index: 8;
+  max-height: calc(100% - var(--barra) - var(--pres-h) - 56px); overflow: auto;
+  background: var(--surface-solid); border: 1px solid var(--accent); border-radius: 12px; box-shadow: var(--shadow);
+  padding: 14px 16px; display: grid; gap: 10px;
+}
+.notas-orador header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.notas-orador header b { font: 700 15px/1.1 var(--font-display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
+.notas-orador header small { font: 500 11.5px/1 var(--font-data); color: var(--muted); }
+.notas-orador p { margin: 0; font-size: 15px; line-height: 1.55; }
+.notas-orador dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 12.5px; }
+.notas-orador dt { color: var(--muted); }
+.notas-orador dd { margin: 0; }
 .portada .pregunta { margin: 0; font-size: 17px; line-height: 1.45; max-width: 66ch; text-wrap: pretty; }
 .hipotesis { display: grid; gap: 4px; padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; font-size: 14.5px; line-height: 1.45; }
 .hipotesis b { font: 600 12px/1.2 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
@@ -448,6 +462,14 @@ dialog.ficha::backdrop { background: rgba(8, 11, 16, 0.5); }
 /* ---------- navegación móvil ---------- */
 .nav-movil { display: none; }
 
+@media (max-height: 780px) and (min-width: 861px) {
+  .portada { padding-block: 12px; }
+  .portada-tarjeta { gap: 10px; padding: 18px 26px; }
+  .portada h1 { font-size: 36px; }
+  .portada .pregunta { font-size: 15.5px; }
+  .hipotesis { font-size: 13.5px; padding: 8px 12px; }
+  .boton.grande { height: 40px; }
+}
 @media (max-width: 1240px) {
   :root { --izq: 284px; --der: 332px; }
   .lupa { width: 280px; height: 200px; }

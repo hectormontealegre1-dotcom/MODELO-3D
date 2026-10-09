@@ -487,7 +487,7 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
         aviso.textContent =
           c.cinetica === 'informada'
             ? 'Curva con la cinética de primer orden informada por los autores; el punto marca el valor informado.'
-            : 'Solo el punto final es un dato del estudio; la trayectoria es de primer orden (supuesto).';
+            : 'Solo el valor es un dato del estudio. Su ubicación al final del intervalo y la trayectoria de primer orden son supuestos del modelo.';
       }
       const filas = [`<tr><th>Exposición con descarga</th><td>${fmtDuracion(proceso.tTrat)}</td></tr>`];
       const v = proceso.progreso;

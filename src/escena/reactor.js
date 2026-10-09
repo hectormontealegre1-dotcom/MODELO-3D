@@ -440,9 +440,11 @@ export function crearReactor(scene) {
     uniforms.uColor.value.setRGB(...est.color);
     uniforms.uDifusa.value = est.difusa ? 1 : 0;
     glow.visible = on;
-    luzPlasma.intensity = on ? 1.5 + In * 4 : 0;
+    // Atenuación por cercanía: de lejos el halo hace visible la descarga; de cerca no satura la imagen
+    const lejos = Math.max(0, Math.min(1, ((est.distCamara ?? 2) - 0.45) / 0.8));
+    luzPlasma.intensity = on ? (0.35 + 0.9 * In) * (0.35 + 0.65 * lejos) : 0;
     luzPlasma.color.setRGB(...est.color);
-    halo.material.opacity = on ? (0.35 + 0.4 * In) * (0.85 + 0.15 * Math.random()) : 0;
+    halo.material.opacity = on ? (0.35 + 0.4 * In) * lejos * (0.85 + 0.15 * Math.random()) : 0;
     halo.material.color.setRGB(...est.color);
     filamentos.material.color.setRGB(...est.color.map((c) => Math.min(1, c * 1.15 + 0.15)));
     const nVis = on ? Math.round(NF * (est.difusa ? 0.12 : Math.min(1, 0.2 + P / 400))) : 0;

@@ -4,7 +4,7 @@ import { BANCO, PARTES, INSTRUMENTOS, ESPECIFICACIONES, SUPUESTOS, SEGURIDAD, AN
 import { REFS, cita } from '../data/referencias.js';
 import { FASES, VELOCIDADES } from '../sim/proceso.js';
 import * as F from '../sim/fisica.js';
-import { fmt, fmtTiempo, fmtDuracion } from './formato.js';
+import { fmt, fmtTiempo, fmtDuracion, textoRico } from './formato.js';
 import * as G from './graficos.js';
 import { COLOR_ESPECIE } from '../escena/lupa.js';
 import { EXPERIMENTO, PASOS } from '../data/recorrido.js';
@@ -125,7 +125,7 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
           <h3>Figura de Lissajous Q–V <span>JI-403 · Cm = 100 nF</span></h3>
           <canvas class="grafico medio" id="c-liss"></canvas>
         </section>
-        <section class="seccion">
+        <section class="seccion" id="ancla-energia">
           <h3>Energía del lote <span>discusión del informe</span></h3>
           <table class="tabla-datos"><tbody>
             <tr><th>Tensión aplicada</th><td id="e-v">—</td></tr>
@@ -168,7 +168,7 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
           <canvas class="grafico medio" id="c-temp"></canvas>
           <p class="ayuda">Modelo ilustrativo anclado a 30 a 60 °C en equipos para alimentos (Jiang et al., 2022) y a +28,9 °C con 1 000 W durante 12 min (Siciliano et al., 2016).</p>
         </section>
-        <section class="seccion">
+        <section class="seccion" id="ancla-ozono">
           <h3>Ozono a la salida <span>AI-502</span></h3>
           <canvas class="grafico medio" id="c-o3"></canvas>
           <p class="ayuda">Orden de magnitud ilustrativo: la revisión no informa concentraciones de ozono.</p>
@@ -242,10 +242,19 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
   // Pestañas de instrumentación
   const tabs = [...document.querySelectorAll('#instrumentos [role="tab"]')];
   let tabActiva = 'electrico';
-  const elegirTab = (id) => {
+  // ancla: sección que debe quedar a la vista (su borde inferior al pie del panel), p. ej. en el recorrido
+  const elegirTab = (id, ancla) => {
     tabActiva = id;
     tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === id)));
     document.querySelectorAll('#instrumentos [data-panel]').forEach((pn) => (pn.hidden = pn.dataset.panel !== id));
+    const caja = $('#instrumentos .desliza');
+    const destino = ancla && document.getElementById(`ancla-${ancla}`);
+    requestAnimationFrame(() => {
+      if (!destino) return void (caja.scrollTop = 0);
+      const rc = caja.getBoundingClientRect();
+      const rd = destino.getBoundingClientRect();
+      caja.scrollTop = Math.max(0, caja.scrollTop + rd.bottom - rc.bottom + 8);
+    });
     try {
       localStorage.setItem('pf-tab', id);
     } catch (e) {
@@ -487,7 +496,11 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
         aviso.textContent =
           c.cinetica === 'informada'
             ? 'Curva con la cinética de primer orden informada por los autores; el punto marca el valor informado.'
-            : 'Solo el valor es un dato del estudio. Su ubicación al final del intervalo y la trayectoria de primer orden son supuestos del modelo.';
+            : c.cinetica === 'ninguna'
+              ? 'Resultado cualitativo: el modelo no traza una trayectoria.'
+              : r.tDato
+                ? 'El valor y su tiempo son datos informados; la trayectoria de primer orden es un supuesto del modelo.'
+                : 'Solo el valor es un dato del estudio. Su ubicación al final del intervalo y la trayectoria de primer orden son supuestos del modelo.';
       }
       const filas = [`<tr><th>Exposición con descarga</th><td>${fmtDuracion(proceso.tTrat)}</td></tr>`];
       const v = proceso.progreso;
@@ -524,7 +537,7 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
     el.hidden = false;
     const resp =
       pz.respaldo === 'revision'
-        ? `<b>Respaldo bibliográfico:</b> ${esc(cita(pz.ref))}.`
+        ? `<b>Función respaldada por:</b> ${esc(cita(pz.ref))}.`
         : '<b>Decisión de ingeniería:</b> la revisión no especifica este componente.';
     el.innerHTML = `
       <header>
@@ -544,25 +557,26 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
     experimento: () => {
       const E = EXPERIMENTO;
       const total = PASOS.reduce((a, x) => a + x.duracionSeg, 0);
+      const lista = (xs) => `<ul class="lista-celda">${xs.map((x) => `<li>${textoRico(x)}</li>`).join('')}</ul>`;
       return `
-      <p><b>${esc(E.titulo)}.</b> ${esc(E.pregunta)}</p>
+      <p><b>${textoRico(E.titulo)}.</b> ${textoRico(E.pregunta)}</p>
       <div class="tabla-ficha-wrap"><table class="tabla-ficha">
         <tbody>
-          <tr><th>Hipótesis</th><td>${esc(E.hipotesis)}</td></tr>
-          <tr><th>Caso de referencia</th><td>${esc(E.casoReferencia || '')}</td></tr>
-          <tr><th>Variable independiente</th><td>${esc(E.variableIndependiente)}</td></tr>
-          <tr><th>Variables dependientes</th><td>${E.variablesDependientes.map(esc).join('<br>')}</td></tr>
-          <tr><th>Variables controladas</th><td>${E.variablesControladas.map(esc).join('<br>')}</td></tr>
-          <tr><th>Control</th><td>${esc(E.control || '')}</td></tr>
-          <tr><th>Réplicas</th><td>${esc(E.replicas || '')}</td></tr>
+          <tr><th>Hipótesis</th><td>${textoRico(E.hipotesis)}</td></tr>
+          <tr><th>Caso de referencia</th><td>${textoRico(E.casoReferencia || '')}</td></tr>
+          <tr><th>Variable independiente</th><td>${textoRico(E.variableIndependiente)}</td></tr>
+          <tr><th>Variables dependientes</th><td>${lista(E.variablesDependientes)}</td></tr>
+          <tr><th>Variables controladas</th><td>${lista(E.variablesControladas)}</td></tr>
+          <tr><th>Control</th><td>${textoRico(E.control || '')}</td></tr>
+          <tr><th>Réplicas</th><td>${textoRico(E.replicas || '')}</td></tr>
         </tbody>
       </table></div>
       <h3>Recorrido de la presentación (${fmtDuracion(total)})</h3>
       <div class="tabla-ficha-wrap"><table class="tabla-ficha">
         <thead><tr><th>N.º</th><th>Etapa</th><th>Paso</th><th>Tiempo</th><th>En pantalla</th></tr></thead>
-        <tbody>${PASOS.map((x, i) => `<tr><td class="mono">${i + 1}</td><td>${esc(x.fase)}</td><td>${esc(x.titulo)}</td><td class="mono">${fmt(x.duracionSeg, 0)} s</td><td>${esc(x.textoPantalla)}</td></tr>`).join('')}</tbody>
+        <tbody>${PASOS.map((x, i) => `<tr><td class="mono">${i + 1}</td><td>${esc(x.fase)}</td><td>${esc(x.titulo)}</td><td class="mono">${fmt(x.duracionSeg, 0)} s</td><td>${textoRico(x.textoPantalla)}</td></tr>`).join('')}</tbody>
       </table></div>
-      ${E.respaldo?.length ? `<h3>Respaldo</h3><ul class="lista-simple">${E.respaldo.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>` : ''}`;
+      ${E.respaldo?.length ? `<h3>Respaldo bibliográfico</h3><ul class="lista-simple">${E.respaldo.map((r) => `<li>${textoRico(r)}</li>`).join('')}</ul>` : ''}`;
     },
     diseno: () => `
       <p>Banco de descarga de barrera dieléctrica (DBD) a presión atmosférica, de escala de laboratorio, para tratar lotes de alimentos o residuos con plasma frío. Se eligió la DBD porque es la configuración con más evidencia en la revisión, enciende con una tensión del orden de 10 kV, opera con aire, N₂, Ar o He y admite el tratamiento dentro del envase. A presión atmosférica se prescinde del equipo de vacío, y sin magnetrón se evita la alta inversión de las descargas de microondas (Okyere et al., 2022; Keramat y Golmakani, 2025).</p>
@@ -576,7 +590,7 @@ export function crearHUD(proceso, { alSeleccionarParte }) {
         <li><b>Purga:</b> tres volúmenes de cámara con el gas de trabajo (≈ ${fmt((3 * BANCO.volCamara) / 2, 1)} min a 2 L/min); en modo envase, barrido y sellado.</li>
         <li><b>Rampa de tensión</b> hasta el valor fijado; la descarga enciende cuando la tensión del gas supera la de ruptura.</li>
         <li><b>Tratamiento</b> durante el tiempo de exposición, con registro de V, I, Q–V, espectro, temperaturas y ozono.</li>
-        <li><b>Post-purga</b> hasta evacuar el ozono por el destructor catalítico; en modo envase, el envase queda sellado con las especies.</li>
+        <li><b>Postpurga</b> hasta evacuar el ozono por el destructor catalítico; en modo envase, el envase queda sellado con las especies.</li>
         <li><b>Análisis:</b> recuento en placa, pH, actividad de agua, color, cromatografía y toxicidad, según el caso.</li>
       </ol>`,
     partes: () => `

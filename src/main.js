@@ -154,24 +154,41 @@ function mallasDe(id) {
 // Resaltado: una copia translúcida de cada malla de la pieza, visible a través de las demás.
 const matResalte = new THREE.MeshBasicMaterial({ color: 0x8f7bff, transparent: true, opacity: 0.45, depthTest: false, depthWrite: false });
 let resaltes = [];
+// Las piezas pequeñas (sonda, condensador de medida…) llevan además una caja que las ubica a distancia.
+const cajaResalte = new THREE.Box3Helper(new THREE.Box3(), 0x8f7bff);
+cajaResalte.material.depthTest = false;
+cajaResalte.material.transparent = true;
+cajaResalte.renderOrder = 9;
+cajaResalte.visible = false;
+scene.add(cajaResalte);
+const esCableado = (o) => o.parent === gases.conexiones || o.parent === inst.conexiones;
 function seleccionar(id) {
   seleccion = id && PARTES[id] ? id : null;
   hud.mostrarParte(seleccion);
   document.querySelectorAll('#lista-piezas [data-parte]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.parte === seleccion)));
   for (const r of resaltes) r.parent?.remove(r);
   resaltes = [];
+  cajaResalte.visible = false;
   if (!seleccion) return;
+  const caja = cajaResalte.box.makeEmpty();
   for (const m of mallasDe(seleccion)) {
     if (m.isInstancedMesh) continue;
+    if (!esCableado(m)) caja.expandByObject(m);
     const r = new THREE.Mesh(m.geometry, matResalte);
     r.renderOrder = 8;
     r.raycast = () => {};
     m.add(r);
     resaltes.push(r);
   }
+  const tam = caja.getSize(new THREE.Vector3());
+  if (!caja.isEmpty() && Math.max(tam.x, tam.y, tam.z) < 0.09) {
+    caja.expandByScalar(0.012);
+    cajaResalte.visible = true;
+  }
 }
 function actualizarCaja() {
   matResalte.opacity = 0.3 + 0.2 * Math.sin(performance.now() / 260);
+  cajaResalte.material.opacity = 0.65 + 0.35 * Math.sin(performance.now() / 260);
 }
 
 const raycaster = new THREE.Raycaster();
@@ -217,8 +234,11 @@ const ETQ = [
   { id: 'humidificador', texto: 'Humidificador', pos: [-0.43, 1.13, -0.2] },
   { id: 'sensorHR', texto: 'Humedad', tag: 'MT-201', pos: [-0.3, 0.985, -0.13], nivel: 2 },
   { id: 'jaula', texto: 'Reactor DBD', tag: 'jaula de Faraday', pos: [-0.1, 1.42, 0.21] },
-  { id: 'fuente', texto: 'Fuente de alta tensión', tag: 'EI-401', pos: [0.45, 1.09, 0.11] },
-  { id: 'osciloscopio', texto: 'Osciloscopio', tag: 'II-402 · JI-403', pos: [0.74, 1.08, -0.17], nivel: 2 },
+  { id: 'fuente', texto: 'Fuente de alta tensión', pos: [0.45, 1.09, 0.11] },
+  { id: 'sondaAT', texto: 'Sonda de alta tensión', tag: 'EI-401', pos: [0.4, 1.13, -0.13], nivel: 2 },
+  { id: 'rogowski', texto: 'Bobina de Rogowski', tag: 'II-402', pos: [0.255, 0.975, 0.066], nivel: 2 },
+  { id: 'capMedida', texto: 'Condensador de medida', tag: 'JI-403', pos: [0.31, 0.955, 0.105], nivel: 2 },
+  { id: 'osciloscopio', texto: 'Osciloscopio', pos: [0.74, 1.08, -0.17], nivel: 2 },
   { id: 'espectrometro', texto: 'Espectrómetro', tag: 'AI-501', pos: [0.1, 0.965, -0.29], nivel: 2 },
   { id: 'camaraIR', texto: 'Cámara IR', tag: 'TI-302', pos: [-0.37, 1.085, -0.05], nivel: 2 },
   { id: 'monitorO3', texto: 'Monitor de O₃', tag: 'AI-502', pos: [0.3, 1.04, -0.27] },
@@ -232,11 +252,17 @@ const ETQ = [
   const el = document.createElement('button');
   el.type = 'button';
   el.className = 'etq';
-  el.innerHTML = `${e.tag ? `<b>${e.tag}</b>` : ''}${e.texto}`;
+  // Guion no separable en los tags (FIC‑101): el código no se corta entre líneas
+  el.innerHTML = `${e.tag ? `<b>${e.tag.replace(/-/g, '\u2011')}</b>` : ''}${e.texto}`;
   el.addEventListener('click', () => seleccionar(e.id));
   capa.appendChild(el);
   return { ...e, el, v: new THREE.Vector3(...e.pos), ancho: 22 + 6.6 * (e.texto.length + (e.tag ? e.tag.length + 1 : 0)) };
 });
+// Un paso del recorrido puede declarar qué etiquetas mostrar (sin filtro de distancia); null = automático.
+let etiquetasPaso = null;
+function fijarEtiquetas(lista) {
+  etiquetasPaso = Array.isArray(lista) ? new Set(lista) : null;
+}
 // Globos numerados del despiece con líneas guía y lista de piezas
 const globos = reactor.piezasDespiece.map(() => {
   const el = document.createElement('button');
@@ -266,7 +292,7 @@ const tmpV = new THREE.Vector3();
 // Rectángulos ya ocupados en pantalla (paneles, tarjetas, lupa y etiquetas puestas en este cuadro).
 // Una etiqueta que choca con uno de ellos no se dibuja; las de mayor prioridad se colocan primero.
 let ocupados = [];
-const OVERLAYS = ['#consola', '#instrumentos', '.vistas', '#lupa', '#pieza', '#alarmas', '#tarjeta-paso', '#barra-pres', '#notas-orador', '#lista-despiece'];
+const OVERLAYS = ['header.barra', '#consola', '#instrumentos', '.vistas', '#lupa', '#pieza', '#alarmas', '#tarjeta-paso', '#barra-pres', '#notas-orador', '#lista-despiece'];
 function medirOverlays() {
   const rc = canvas.getBoundingClientRect();
   ocupados = [];
@@ -289,7 +315,8 @@ function proyectar(v, el, w, h, alinear = 'translate(-50%, -100%)', ancho = 0, a
     const r = centrada
       ? { x0: x - ancho / 2, y0: y - alto / 2, x1: x + ancho / 2, y1: y + alto / 2 }
       : { x0: x - ancho / 2, y0: y - alto - 2, x1: x + ancho / 2, y1: y };
-    if (choca(r)) visible = false;
+    // Una etiqueta cortada por el borde del lienzo no se dibuja
+    if (r.x0 < 4 || r.x1 > w - 4 || r.y0 < 4 || r.y1 > h - 4 || choca(r)) visible = false;
     else ocupados.push(r);
   }
   el.style.display = visible ? '' : 'none';
@@ -301,15 +328,20 @@ function actualizarEtiquetas() {
   const h = canvas.clientHeight;
   medirOverlays();
   const enDespiece = despiece > 0.3;
+  const enRecorrido = presentacion.activo;
+  const ver = verEtiquetas || enRecorrido;
   for (const e of ETQ) {
-    const cerca = vistaActual === 'general' ? e.nivel !== 2 : camara.position.distanceTo(e.v) < 1.25;
-    if (!verEtiquetas || enDespiece || !cerca || vistaActual === 'descarga') e.el.style.display = 'none';
+    let mostrar;
+    if (enRecorrido && etiquetasPaso) mostrar = etiquetasPaso.has(e.id);
+    else mostrar = vistaActual === 'general' ? e.nivel !== 2 : camara.position.distanceTo(e.v) < 1.25;
+    if (!ver || enDespiece || !mostrar || vistaActual === 'descarga') e.el.style.display = 'none';
     else proyectar(e.v, e.el, w, h, undefined, e.ancho, 24);
   }
-  guias.visible = enDespiece && verEtiquetas;
+  const numeros = enDespiece && ver;
+  guias.visible = numeros;
   reactor.piezasDespiece.forEach((pz, i) => {
     const el = globos[i];
-    if (!enDespiece || !verEtiquetas) {
+    if (!numeros) {
       el.style.display = 'none';
       return;
     }
@@ -438,7 +470,9 @@ function redimensionar() {
   if (window.innerWidth > 860) {
     const pi = $('#consola');
     const pd = $('#instrumentos');
-    const izq = pi.offsetParent ? pi.getBoundingClientRect().right : 0;
+    const pl = $('#lupa');
+    let izq = pi.offsetParent ? pi.getBoundingClientRect().right : 0;
+    if (pl.offsetParent && !pl.hidden && pl.getBoundingClientRect().left < w * 0.1) izq = Math.max(izq, pl.getBoundingClientRect().right);
     const der = pd.offsetParent ? pd.getBoundingClientRect().left : w;
     desplazamiento = (izq + der) / 2 - w / 2;
   }
@@ -456,12 +490,14 @@ const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) 
 
 function cuadro() {
   requestAnimationFrame(cuadro);
-  const dt = Math.min(0.1, reloj.getDelta());
+  const dtReal = reloj.getDelta();
+  const dt = Math.min(0.1, dtReal);
   proceso.paso(dt);
   const est = estado(dt);
 
   if (viaje) {
-    viaje.t = Math.min(1, viaje.t + dt / 1.1);
+    // Tiempo real: el viaje dura ≈ 1,1 s aunque el equipo dibuje pocos cuadros por segundo
+    viaje.t = Math.min(1, viaje.t + Math.min(dtReal, 0.25) / 1.1);
     const k = easeInOut(viaje.t);
     camara.position.lerpVectors(viaje.p0, viaje.p1, k);
     controles.target.lerpVectors(viaje.o0, viaje.o1, k);
@@ -478,7 +514,7 @@ function cuadro() {
     inst.dibujar(est);
     dibujarPantallasGas(est);
   }
-  presentacion.actualizar(dt);
+  presentacion.actualizar(dtReal);
   actualizarCaja();
   actualizarEtiquetas();
   hud.actualizar(est, dt);
@@ -503,20 +539,20 @@ function cuadro() {
       renderer.render(lupa.scene, lupa.camara);
       renderer.setScissorTest(false);
     }
-    $('#lupa-info').textContent = est.plasma ? (est.difusa ? 'descarga difusa' : 'microdescargas') : 'esquemático, sin escala';
+    $('#lupa-info').textContent = `${est.plasma ? (est.difusa ? 'descarga difusa · ' : 'microdescargas · ') : ''}esquemático, sin escala`;
   }
 }
 
 // ---------------- Modo Presentar ----------------
-function mostrarPanel(tab) {
+function mostrarPanel(tab, ancla) {
   $('#app').dataset.panelPres = tab ? '1' : '0';
-  if (tab) hud.elegirTab(tab);
+  if (tab) hud.elegirTab(tab, ancla);
   window.dispatchEvent(new Event('resize'));
 }
 const presentacion = crearPresentacion({
   experimento: EXPERIMENTO,
   pasos: PASOS,
-  ctx: { proceso, irA, fijarCorte, fijarDespiece, fijarLupa, seleccionar, mostrarPanel },
+  ctx: { proceso, irA, fijarCorte, fijarDespiece, fijarLupa, fijarEtiquetas, seleccionar, mostrarPanel },
 });
 
 // Acceso desde la consola del navegador (depuración y demostraciones).

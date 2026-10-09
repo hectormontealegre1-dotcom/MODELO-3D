@@ -16,7 +16,7 @@ Abra `dist/pirolisis-en-frio-3d.html` con doble clic en Chrome, Edge o Firefox. 
 | Despiece | 15 piezas numeradas de la celda: pasamuros, tapa, electrodos, barreras de sílice, difusor, muestra, elevador micrométrico, base, cuerpo de policarbonato, ventanas de cuarzo y ZnSe, jaula y puerta con enclavamiento. Cada pieza indica su material, su función y si su respaldo es la revisión o una decisión de ingeniería. |
 | Corte | Sección de la cámara para ver la descarga entre las barreras y la muestra. |
 | Lupa | Vista ampliada y esquemática de la zona de descarga: electrones, microdescargas, especies reactivas (O, O₃, OH•, H₂O₂, NOₓ, N₂*, UV) y su llegada a células o moléculas de toxina. |
-| Proceso | Secuencia purga → rampa de tensión → tratamiento → post-purga → análisis, con enclavamiento de puerta, paro de emergencia y corte por ozono ambiental. |
+| Proceso | Secuencia purga → rampa de tensión → tratamiento → postpurga → análisis, con enclavamiento de puerta, paro de emergencia y corte por ozono ambiental. |
 | Instrumentos | Osciloscopio (V e I), figura de Lissajous Q–V, energía del lote (E = P·t, kJ/kg y kJ/kg por ciclo logarítmico), espectro de emisión, especies, no equilibrio térmico (Ecuación 4), temperaturas, ozono, caudales y humedad. |
 | Casos | 28 casos de las Tablas 3 y 4 del informe, más la decloración de PVC. Cada uno trae su resultado informado y una clasificación de cobertura frente al banco: dentro del alcance, parcial o fuera del alcance. |
 | Ficha técnica | Especificaciones, lista de partes, instrumentos, cobertura de la literatura, supuestos, seguridad y referencias. También se genera en `docs/ficha-tecnica.md`. |
@@ -33,6 +33,15 @@ Abra `dist/pirolisis-en-frio-3d.html` con doble clic en Chrome, Edge o Firefox. 
 - **Supuestos de ingeniería:** la frecuencia, las dimensiones, los materiales no mencionados, la tensión de ruptura (correlación empírica para aire), la potencia (ecuación de Manley), los modelos térmicos y de ozono, las intensidades de especies y del espectro, y la forma de las curvas entre el origen y el valor informado (primer orden). La única excepción es la zearalenona, cuya cinética informan Zheng et al. (2022).
 - **Alcance de la simulación:** las lecturas son didácticas. Muestran tendencias y órdenes de magnitud, no predicciones. El simulador no inventa resultados de inactivación: solo reproduce el punto final informado por cada estudio y avisa cuando las condiciones elegidas se apartan de las del caso.
 
+## Presentar en 10 minutos
+
+La portada ofrece **Presentar · ≈ 10 min**: un recorrido guiado de 10 pasos que expone el modelo como un experimento de banco (pregunta, hipótesis, diseño, montaje, procedimiento, dos mediciones, resultado, análisis y conclusión). El caso de referencia es Kilonzo-Nthenge et al. (2018): *E. coli* sobre manzana con una DBD de 200 W.
+
+- Cada paso arma su escena (cámara, corte, despiece, lupa, plasma y panel), así que se puede avanzar, retroceder o saltar sin dejar el modelo incoherente.
+- Teclas: →, Espacio o AvPág avanza; ← o RePág retrocede; N muestra las notas del orador; Inicio vuelve al paso 1; Esc sale a explorar. Un control remoto de diapositivas funciona.
+- Cronómetro total y barra por paso, que se pone amarilla al pasar en un 20 % el tiempo sugerido.
+- Guion completo, tiempos y mensajes clave: `docs/guion-presentacion.md` (generado desde `src/data/recorrido.js`). Capturas de respaldo de cada paso en `docs/capturas-plan-b/`.
+
 ## Uso rápido
 
 1. Elija un caso de la literatura en la consola de la izquierda. El banco aplica las condiciones del estudio que caben en sus límites e indica los ajustes que hizo.
@@ -45,16 +54,16 @@ Abra `dist/pirolisis-en-frio-3d.html` con doble clic en Chrome, Edge o Firefox. 
 
 ```bash
 npm install
-npm run build        # genera dist/pirolisis-en-frio-3d.html y docs/ficha-tecnica.md
+npm run build        # genera dist/pirolisis-en-frio-3d.html, docs/ficha-tecnica.md y docs/guion-presentacion.md
 npm run watch        # recompila al guardar cambios en src/
 ```
 
 | Ruta | Contenido |
 |---|---|
-| `src/data/` | Referencias, casos de la literatura, especificaciones, partes e instrumentos (fuente única de los datos). |
+| `src/data/` | Referencias, casos de la literatura, especificaciones, partes, instrumentos y recorrido de la presentación (fuente única de los datos). |
 | `src/sim/` | Física de la descarga y máquina de estados del proceso. |
 | `src/escena/` | Geometría 3D (Three.js): entorno, reactor, gases, instrumentos, muestras y lupa. |
 | `src/ui/` | Interfaz, gráficos y formato numérico en español. |
-| `build.mjs` | Empaqueta todo con esbuild en un solo HTML y genera la ficha en Markdown. |
+| `build.mjs` | Empaqueta todo con esbuild en un solo HTML y genera la ficha y el guion en Markdown. |
 
 Desde la consola del navegador, `window.bancoDBD` da acceso al proceso para demostraciones (por ejemplo, `bancoDBD.proceso.set('caso', 'zheng')`).

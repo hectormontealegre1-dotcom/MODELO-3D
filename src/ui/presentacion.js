@@ -1,16 +1,16 @@
 // Modo «Presentar»: portada del experimento y recorrido guiado de 10 pasos con cronómetro.
 // Cada paso parte de un estado definido (vista, caso, fase del proceso, capas), así que
 // avanzar, retroceder o saltar a un paso deja el modelo siempre coherente.
-import { fmtTiempo } from './formato.js';
+import { fmtTiempo, textoRico } from './formato.js';
 import { VELOCIDADES } from '../sim/proceso.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
-// «Etiqueta: texto» se muestra con la etiqueta destacada.
+// «Etiqueta: texto» se muestra con la etiqueta (y sus dos puntos) destacada.
 const linea = (l) => {
   const i = l.indexOf(': ');
-  return i > 0 && i < 40 ? `<b>${esc(l.slice(0, i))}</b> ${esc(l.slice(i + 2))}` : esc(l);
+  return i > 0 && i < 40 ? `<b>${esc(l.slice(0, i + 1))}</b> ${textoRico(l.slice(i + 2))}` : textoRico(l);
 };
 
 export function crearPresentacion({ experimento, pasos, ctx }) {
@@ -30,19 +30,19 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     <div class="portada-tarjeta">
       <p class="eyebrow">Seminario «Pirólisis en frío» · Experimento de banco</p>
       <h1 id="portada-titulo">${esc(experimento.tituloCorto)}</h1>
-      <p class="subtitulo">${esc(experimento.titulo)}</p>
-      <p class="pregunta">${esc(experimento.pregunta)}</p>
-      <div class="hipotesis"><b>Hipótesis</b><span>${esc(experimento.hipotesis)}</span></div>
+      <p class="subtitulo">${textoRico(experimento.titulo)}</p>
+      <p class="pregunta">${textoRico(experimento.pregunta)}</p>
+      <div class="hipotesis"><b>Hipótesis</b><span>${textoRico(experimento.hipotesis)}</span></div>
       <dl class="variables">
         <div><dt>Variable independiente</dt><dd>${experimento.resumen.independiente.map(esc).join('<br>')}</dd></div>
         <div><dt>Variables dependientes</dt><dd>${experimento.resumen.dependientes.map(esc).join('<br>')}</dd></div>
         <div><dt>Variables controladas</dt><dd>${experimento.resumen.controladas.map(esc).join('<br>')}</dd></div>
       </dl>
       <div class="portada-acciones">
-        <button type="button" class="boton primario grande" id="btn-portada-presentar">Presentar · ${Math.round(total / 60)} min</button>
+        <button type="button" class="boton primario grande" id="btn-portada-presentar">Presentar · ≈ ${Math.round(total / 60)} min</button>
         <button type="button" class="boton grande" id="btn-portada-explorar">Explorar el modelo</button>
       </div>
-      <p class="nota">Modelo explicativo construido solo con la revisión bibliográfica del seminario. Lo que no proviene de ella se declara como supuesto de ingeniería en la «Ficha técnica». Durante el recorrido: → o Espacio avanza, ← retrocede, N muestra las notas del orador y Esc sale.</p>
+      <p class="nota">Modelo explicativo cuyos datos provienen solo de la revisión bibliográfica del seminario; lo demás se declara como supuesto de ingeniería en la «Ficha técnica». Durante el recorrido: →, Espacio o AvPág avanza; ← o RePág retrocede; N muestra u oculta las notas del orador; Esc sale.</p>
     </div>`;
   app.appendChild(portada);
 
@@ -88,8 +88,8 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     notas.hidden = !(activo && verNotas);
     $('#bp-notas').setAttribute('aria-pressed', String(verNotas));
     notas.innerHTML = `<header><b>Notas del orador · paso ${idx + 1}</b><small>${paso.duracionSeg} s sugeridos</small></header>
-      <p>${esc(paso.guionOral)}</p>
-      <dl><dt>Qué mostrar</dt><dd>${esc(paso.queMirar || '')}</dd><dt>Mensaje clave</dt><dd>${esc(paso.mensajeClave || '')}</dd></dl>`;
+      <p>${textoRico(paso.guionOral)}</p>
+      <dl><dt>Qué mostrar</dt><dd>${textoRico(paso.queMirar || '')}</dd><dt>Mensaje clave</dt><dd>${textoRico(paso.mensajeClave || '')}</dd></dl>`;
   }
   const alternarNotas = () => {
     verNotas = !verNotas;
@@ -97,6 +97,19 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
   };
 
   const segs = [...barra.querySelectorAll('.bp-seg')];
+
+  // --pres-h sigue la altura real de la barra: los paneles y la tarjeta se apoyan sobre ella.
+  let presH = 0;
+  function medirBarra() {
+    if (barra.hidden) return;
+    const h = Math.ceil(barra.getBoundingClientRect().height);
+    if (h && h !== presH) {
+      presH = h;
+      app.style.setProperty('--pres-h', `${h}px`);
+      window.dispatchEvent(new Event('resize'));
+    }
+  }
+  new ResizeObserver(medirBarra).observe(barra);
 
   // ---------------- Pasos ----------------
   function velocidadPara(segundosSim, segundosReales) {
@@ -113,29 +126,35 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     const a = paso.acciones || {};
     const p = ctx.proceso;
 
-    // Estado de partida limpio
+    app.dataset.paso = paso.id;
+
+    // Estado de partida limpio: caudal y humedad nominales aunque se hayan cambiado al explorar
     if (p.paro) p.pararEmergencia();
     if (p.puertaAbierta) p.alternarPuerta();
+    p.p.Q = 2;
+    p.p.HR = 40;
     if (a.caso) p.set('caso', a.caso);
     if (a.gas && p.p.gas !== a.gas) p.set('gas', a.gas);
     ctx.fijarDespiece(a.despiece ?? 0);
     ctx.fijarCorte(a.corte ?? false);
     ctx.fijarLupa(a.lupa ?? false);
+    ctx.fijarEtiquetas(a.etiquetas ?? null);
     if (a.vista) ctx.irA(a.vista);
 
-    // Proceso: los estados con descarga corren en vivo; los demás quedan fijos
+    // Proceso: la purga y el tratamiento corren en vivo y se detienen antes de pasar a la fase
+    // siguiente (actualizar); los demás estados quedan fijos.
     const fase = a.proceso || 'reposo';
     p.irAFase(fase, a.avance ?? 0);
     if (fase === 'tratamiento') {
       const restante = Math.max(0, 0.95 - (a.avance ?? 0)) * p.p.t;
-      p.p.velocidad = velocidadPara(restante, paso.duracionSeg * 0.7);
+      p.set('velocidad', velocidadPara(restante, paso.duracionSeg * 0.7));
     }
     p.pausado = !(fase === 'tratamiento' || fase === 'purga');
     if (a.puerta === 'abrir') p.alternarPuerta();
     p.emitir('fase');
 
     ctx.seleccionar(a.resaltar || null);
-    ctx.mostrarPanel(a.panel === 'instrumentos' ? a.tab || 'electrico' : null);
+    ctx.mostrarPanel(a.panel === 'instrumentos' ? a.tab || 'electrico' : null, a.ancla);
 
     if (a.tarjeta) {
       tarjeta.hidden = false;
@@ -147,7 +166,7 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     $('#bp-num').textContent = String(idx + 1);
     $('#bp-fase').textContent = paso.fase;
     $('#bp-titulo').textContent = paso.titulo;
-    $('#bp-desc').textContent = paso.textoPantalla;
+    $('#bp-desc').innerHTML = textoRico(paso.textoPantalla);
     $('#bp-ant').disabled = idx === 0;
     $('#bp-sig').textContent = idx === pasos.length - 1 ? 'Terminar' : 'Siguiente →';
     pintarNotas();
@@ -166,7 +185,8 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     portada.hidden = true;
     barra.hidden = false;
     app.dataset.presentando = '1';
-    $('#btn-presentar').textContent = 'Salir del recorrido';
+    $('#btn-presentar').innerHTML = 'Salir<span>&nbsp;del recorrido</span>';
+    medirBarra();
     window.dispatchEvent(new Event('resize'));
     aplicar(desde);
     $('#bp-sig').focus();
@@ -178,6 +198,8 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     tarjeta.hidden = true;
     notas.hidden = true;
     app.dataset.presentando = '0';
+    delete app.dataset.paso;
+    ctx.fijarEtiquetas(null);
     ctx.mostrarPanel(null);
     ctx.fijarLupa(true);
     ctx.proceso.pausado = false;
@@ -219,6 +241,8 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     const t = e.target;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
     if ($('#ficha')?.open) return;
+    // Alt+←/→ y Cmd+←/→ quedan para el navegador
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (!activo) {
       if (!portada.hidden && (e.key === 'Enter' || e.key === ' ') && t === document.body) {
         e.preventDefault();
@@ -226,12 +250,13 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
       }
       return;
     }
+    // Una tecla mantenida pulsada no salta varios pasos
     if (['ArrowRight', 'PageDown', ' '].includes(e.key)) {
       e.preventDefault();
-      siguiente();
+      if (!e.repeat) siguiente();
     } else if (['ArrowLeft', 'PageUp'].includes(e.key)) {
       e.preventDefault();
-      anterior();
+      if (!e.repeat) anterior();
     } else if (e.key === 'n' || e.key === 'N') {
       e.preventDefault();
       alternarNotas();
@@ -254,9 +279,14 @@ export function crearPresentacion({ experimento, pasos, ctx }) {
     const seg = segs.at(idx);
     seg.querySelector('i').style.width = `${Math.min(100, (tPaso / paso.duracionSeg) * 100)}%`;
     seg.dataset.excedido = tPaso > paso.duracionSeg * 1.2 ? '1' : '0';
-    // La descarga se mantiene encendida mientras se explica: el lote se detiene al 95 % del tiempo
+    // La descarga se mantiene encendida mientras se explica: el lote se detiene al 95 % del tiempo.
+    // La purga se detiene al 90 %, antes de que la secuencia encienda la alta tensión.
     const p = ctx.proceso;
-    if (p.fase === 'tratamiento' && !p.pausado && p.tFase >= 0.95 * p.p.t && (paso.acciones?.proceso === 'tratamiento')) {
+    const fase = paso.acciones?.proceso;
+    const frenar =
+      (fase === 'tratamiento' && p.fase === 'tratamiento' && p.tFase >= 0.95 * p.p.t) ||
+      (fase === 'purga' && p.fase === 'purga' && p.tFase >= 0.9 * p.duracionPurga());
+    if (!p.pausado && frenar) {
       p.pausado = true;
       p.emitir('fase');
     }

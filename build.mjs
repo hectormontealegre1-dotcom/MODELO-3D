@@ -72,6 +72,46 @@ ${cuerpo.replace('<!--APP-->', () => `<script>${seguro(js)}</script>`)}
   }
 
   await fichaMarkdown();
+  await guionMarkdown();
+}
+
+// Guion del modo «Presentar» en Markdown, a partir de src/data/recorrido.js.
+async function guionMarkdown() {
+  const { EXPERIMENTO, PASOS } = await import(`./src/data/recorrido.js?v=${Date.now()}`);
+  const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const cursiva = (s) => s.replace(/\bE\. coli\b/g, '*E. coli*').replace(/\bSalmonella\b/g, '*Salmonella*');
+  const celda = (s) => cursiva(String(s ?? '').replace(/\|/g, '\\|'));
+  const total = PASOS.reduce((a, p) => a + p.duracionSeg, 0);
+  const palabras = PASOS.reduce((a, p) => a + p.guionOral.split(/\s+/).length, 0);
+  const md = ['# Guion de presentación · Banco DBD de pirólisis en frío', ''];
+  md.push('Documento generado por `build.mjs` a partir de `src/data/recorrido.js`: es el mismo texto de las notas del orador (tecla N) del modo «Presentar».', '');
+  md.push(`**Pregunta.** ${cursiva(EXPERIMENTO.pregunta)}`, '');
+  md.push(`**Hipótesis.** ${cursiva(EXPERIMENTO.hipotesis)}`, '');
+  md.push('## Cómo usar el HTML', '');
+  md.push('1. Abre `dist/pirolisis-en-frio-3d.html` con Chrome o Edge (no necesita internet), pantalla completa con F11 y zoom al 100 %.');
+  md.push('2. En la portada pulsa «Presentar» (o Enter). Cada paso arma su propia escena: cámara, capas, plasma y paneles.');
+  md.push('3. Avanza con →, Espacio o AvPág; retrocede con ← o RePág; N muestra u oculta las notas del orador; Inicio vuelve al paso 1; Esc sale a explorar. Un control remoto de diapositivas sirve, porque envía AvPág y RePág.');
+  md.push('4. La barra de cada paso se llena en su tiempo sugerido y se pone amarilla si te pasas en más de un 20 %. Puedes saltar a cualquier paso con un clic en su segmento.');
+  md.push('5. Si el HTML falla, usa las capturas de `docs/capturas-plan-b/` (portada y pasos 1 a 10, 1920 × 1080) con este mismo guion.', '');
+  md.push(`## Tiempos (${Math.floor(total / 60)} min ${total % 60} s, unas ${Math.round(palabras / (total / 60))} palabras por minuto)`, '');
+  md.push('| Paso | Minuto | Etapa | Mensaje clave |', '|---|---|---|---|');
+  let t = 0;
+  for (const [i, p] of PASOS.entries()) {
+    md.push(`| ${i + 1}. ${celda(p.titulo)} | ${mmss(t)}–${mmss(t + p.duracionSeg)} | ${celda(p.fase)} | ${celda(p.mensajeClave)} |`);
+    t += p.duracionSeg;
+  }
+  md.push('', '## Guion paso a paso', '');
+  t = 0;
+  for (const [i, p] of PASOS.entries()) {
+    md.push(`### ${i + 1}. ${cursiva(p.titulo)} · ${mmss(t)}–${mmss(t + p.duracionSeg)}`, '');
+    md.push(`**En pantalla:** ${cursiva(p.textoPantalla)}`, '');
+    md.push(`> ${cursiva(p.guionOral)}`, '');
+    md.push(`**Señala:** ${cursiva(p.queMirar)}`, '');
+    md.push(`**Mensaje clave:** ${cursiva(p.mensajeClave)}`, '');
+    t += p.duracionSeg;
+  }
+  await writeFile(path.join(raiz, 'docs/guion-presentacion.md'), md.join('\n'));
+  console.log('docs/guion-presentacion.md');
 }
 
 // Ficha técnica en Markdown a partir de los mismos datos del modelo.

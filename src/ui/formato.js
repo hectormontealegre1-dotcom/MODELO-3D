@@ -22,3 +22,11 @@ export function fmtDuracion(seg) {
   if (seg < 7200) return `${fmt(seg / 60, seg % 60 ? 1 : 0)} min`;
   return `${fmt(seg / 3600, 1)} h`;
 }
+
+// Texto escapado para HTML con los nombres científicos en cursiva y sin corte de línea (E. coli).
+const ESPECIES_CURSIVA = /\b(E\. coli|Salmonella|S\. aureus|B\. cereus)/g;
+export function textoRico(s) {
+  return String(s ?? '')
+    .replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+    .replace(ESPECIES_CURSIVA, (m) => `<i>${m.replace(' ', ' ')}</i>`);
+}

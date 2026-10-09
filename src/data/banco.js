@@ -159,7 +159,7 @@ export const PARTES = {
   elevador: {
     corto: 'Elevador micrométrico',
     n: 9, grupo: 'Reactor', nombre: 'Plataforma elevadora micrométrica',
-    material: 'PTFE y husillo de nailon, cabezal de 0,01 mm', funcion: 'Fija la separación d entre la barrera y la muestra (ZI-701).',
+    material: 'PTFE y husillo de nailon, cabezal de 0,01 mm', funcion: 'Fija la separación d entre la barrera y la muestra, de 1 a 20 mm (ZI-701).',
     respaldo: 'revision', ref: ['niemira2018'],
   },
   base: {
@@ -332,7 +332,7 @@ export const ANALISIS_FUERA_DE_LINEA = [
 ];
 
 export const SUPUESTOS = [
-  'Frecuencia de 5 a 20 kHz: la revisión no la informa para las DBD.',
+  'Frecuencia de la fuente fija en 10 kHz al aplicar un caso (la fuente admite de 5 a 20 kHz): la revisión no la informa para las DBD.',
   'Tensión de ruptura del aire con la correlación empírica V = 24,4·d + 6,53·√d (kV, d en cm) y una rigidez dieléctrica relativa aproximada para N₂, O₂, CO₂, Ar y He.',
   'Potencia calculada con el modelo de capacitancias equivalentes de la DBD (ecuación de Manley).',
   'Temperaturas del gas y del sustrato con modelos de primer orden ilustrativos, anclados al intervalo de 30 a 60 °C (Jiang et al., 2022) y al aumento de 28,9 °C a 1 000 W y 12 min (Siciliano et al., 2016).',

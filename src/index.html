@@ -164,6 +164,7 @@ button, input, select { font: inherit; color: inherit; }
   height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line);
   background: var(--surface-solid); cursor: pointer; font-weight: 500; white-space: nowrap;
 }
+.barra .boton { gap: 0; }
 .boton:hover { border-color: var(--accent); }
 .boton.primario { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .boton.peligro { background: var(--crit); color: #fff; border-color: transparent; font-weight: 600; }
@@ -347,14 +348,14 @@ select.campo, input.campo {
   background: var(--velo); backdrop-filter: blur(4px);
 }
 .portada-tarjeta {
-  width: min(880px, 100%); background: var(--surface-solid); border: 1px solid var(--line); border-radius: 16px;
+  width: min(clamp(880px, 58vw, 1120px), 100%); background: var(--surface-solid); border: 1px solid var(--line); border-radius: 16px;
   box-shadow: var(--shadow); padding: 28px 32px; display: grid; gap: 16px;
 }
 .portada .eyebrow { margin: 0; font: 600 12.5px/1.2 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
-.portada h1 { margin: 0; font: 700 clamp(30px, 4.2vw, 46px)/1.02 var(--font-display); letter-spacing: 0.005em; text-wrap: balance; }
-.portada .subtitulo { margin: -8px 0 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); max-width: 80ch; }
+.portada h1 { margin: 0; font: 700 clamp(30px, 3.2vw, 58px)/1.02 var(--font-display); letter-spacing: 0.005em; text-wrap: balance; }
+.portada .subtitulo { margin: -8px 0 0; font-size: clamp(14px, 0.85vw, 16.5px); line-height: 1.4; color: var(--ink-2); max-width: 80ch; }
 .notas-orador {
-  position: absolute; right: 16px; bottom: calc(var(--pres-h) + 24px); width: min(520px, calc(100% - 32px)); z-index: 8;
+  position: absolute; right: 16px; bottom: calc(var(--pres-h) + 24px); width: min(clamp(460px, 32vw, 640px), calc(100% - 32px)); z-index: 8;
   max-height: calc(100% - var(--barra) - var(--pres-h) - 56px); overflow: auto;
   background: var(--surface-solid); border: 1px solid var(--accent); border-radius: 12px; box-shadow: var(--shadow);
   padding: 14px 16px; display: grid; gap: 10px;
@@ -362,32 +363,32 @@ select.campo, input.campo {
 .notas-orador header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .notas-orador header b { font: 700 15px/1.1 var(--font-display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
 .notas-orador header small { font: 500 11.5px/1 var(--font-data); color: var(--muted); }
-.notas-orador p { margin: 0; font-size: 15px; line-height: 1.55; }
-.notas-orador dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 12.5px; }
+.notas-orador p { margin: 0; font-size: clamp(15px, 0.95vw, 18px); line-height: 1.55; }
+.notas-orador dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: clamp(12.5px, 0.8vw, 15px); }
 .notas-orador dt { color: var(--muted); }
 .notas-orador dd { margin: 0; }
-.portada .pregunta { margin: 0; font-size: 17px; line-height: 1.45; max-width: 66ch; text-wrap: pretty; }
-.hipotesis { display: grid; gap: 4px; padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; font-size: 14.5px; line-height: 1.45; }
+.portada .pregunta { margin: 0; font-size: clamp(17px, 1.05vw, 21px); line-height: 1.45; max-width: 66ch; text-wrap: pretty; }
+.hipotesis { display: grid; gap: 4px; padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; font-size: clamp(14.5px, 0.85vw, 17px); line-height: 1.45; }
 .hipotesis b { font: 600 12px/1.2 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
 .variables { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .variables div { background: var(--surface-solid); padding: 10px 12px; display: grid; gap: 4px; align-content: start; }
 .variables dt { font: 600 11.5px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.variables dd { margin: 0; font-size: 13px; line-height: 1.45; }
+.variables dd { margin: 0; font-size: clamp(13px, 0.78vw, 15.5px); line-height: 1.45; }
 .portada-acciones { display: flex; flex-wrap: wrap; gap: 10px; }
 .boton.grande { height: 44px; padding: 0 18px; font-size: 15px; border-radius: 8px; }
-.portada .nota { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); max-width: 84ch; }
+.portada .nota { margin: 0; font-size: clamp(12px, 0.7vw, 14px); line-height: 1.5; color: var(--muted); max-width: 84ch; }
 
 /* ---------- recorrido guiado ---------- */
 .barra-pres {
-  position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 7; min-height: var(--pres-h);
+  position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 7; min-height: 128px;
   display: grid; gap: 8px; padding: 8px 16px 14px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); backdrop-filter: blur(10px);
 }
 .bp-segmentos { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 4px; }
 .bp-seg { position: relative; height: 16px; border: 0; padding: 0; background: transparent; cursor: pointer; }
-.bp-seg::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 6px; border-radius: 3px; background: var(--surface-2); }
-.bp-seg:hover::before { background: var(--line); }
-.bp-seg i { position: absolute; left: 0; top: 5px; height: 6px; width: 0; border-radius: 3px; background: var(--accent); }
+.bp-seg::before { content: ""; position: absolute; left: 0; right: 0; top: 4px; height: 8px; border-radius: 4px; background: var(--line); }
+.bp-seg:hover::before { background: var(--muted); }
+.bp-seg i { position: absolute; left: 0; top: 4px; height: 8px; width: 0; border-radius: 4px; background: var(--accent); }
 .bp-seg[data-estado="hecho"] i { opacity: 0.5; }
 .bp-seg[data-excedido="1"] i { background: var(--warn); }
 .bp-cuerpo { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 22px; align-items: center; }
@@ -396,27 +397,42 @@ select.campo, input.campo {
 .bp-de { font: 500 12px/1 var(--font-data); color: var(--muted); }
 .bp-fase { grid-column: 1 / -1; font: 600 12px/1.1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
 .bp-texto { min-width: 0; }
-.bp-texto h2 { margin: 0; font: 700 23px/1.15 var(--font-display); text-wrap: balance; }
-.bp-texto p { margin: 4px 0 0; font-size: 15.5px; line-height: 1.45; color: var(--ink-2); max-width: 100ch; text-wrap: pretty; }
+.bp-texto h2 { margin: 0; font: 700 clamp(22px, 1.5vw, 30px)/1.15 var(--font-display); text-wrap: balance; }
+.bp-texto p { margin: 4px 0 0; font-size: clamp(15.5px, 1.04vw, 20px); line-height: 1.45; color: var(--ink-2); max-width: 110ch; text-wrap: pretty; }
 .bp-ctrl { display: flex; align-items: center; gap: 8px; }
 .bp-reloj { display: grid; justify-items: end; margin-right: 6px; }
 .bp-reloj time { font: 600 22px/1 var(--font-data); font-variant-numeric: tabular-nums; }
 .bp-reloj small { font-size: 11.5px; color: var(--muted); }
 .tarjeta-paso {
-  position: absolute; left: 16px; top: calc(var(--barra) + 16px); width: min(470px, calc(100% - 32px)); z-index: 6;
+  position: absolute; left: 16px; top: calc(var(--barra) + 16px); width: min(clamp(470px, 30vw, 620px), calc(100% - 32px)); z-index: 6;
   max-height: calc(100% - var(--barra) - var(--pres-h) - 56px); overflow: auto;
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); backdrop-filter: blur(10px);
   padding: 16px 18px; display: grid; gap: 10px;
 }
-.tarjeta-paso h3 { margin: 0; font: 700 21px/1.1 var(--font-display); text-wrap: balance; }
+.tarjeta-paso h3 { margin: 0; font: 700 clamp(21px, 1.35vw, 27px)/1.1 var(--font-display); text-wrap: balance; }
 .tarjeta-paso ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
-.tarjeta-paso li { position: relative; padding-left: 16px; font-size: 14.5px; line-height: 1.42; }
+.tarjeta-paso li { position: relative; padding-left: 16px; font-size: clamp(14.5px, 0.98vw, 19px); line-height: 1.42; }
 .tarjeta-paso li::before { content: ""; position: absolute; left: 0; top: 0.58em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .tarjeta-paso li b { font-weight: 600; }
 
 #app[data-presentando="1"] #consola,
-#app[data-presentando="1"] .vistas,
-#app[data-presentando="1"] .lista-despiece { display: none; }
+#app[data-presentando="1"] .vistas { display: none; }
+#app[data-presentando="1"] .lista-despiece {
+  left: 16px; right: auto; bottom: calc(var(--pres-h) + 24px); max-height: calc(100% - var(--barra) - var(--pres-h) - 56px); overflow: auto;
+}
+/* Con el panel de instrumentos a la derecha, las notas pasan a la izquierda */
+#app[data-presentando="1"][data-panel-pres="1"] .notas-orador { right: auto; left: 16px; }
+/* Paso 7: la lupa es protagonista */
+@media (min-width: 861px) {
+  #app[data-presentando="1"][data-paso="medicion-plasma"] .lupa {
+    display: block; left: 16px; right: auto; top: calc(var(--barra) + 16px); bottom: auto;
+    width: min(40vw, 760px); height: min(calc(100% - var(--barra) - var(--pres-h) - 56px), 540px);
+  }
+  #app[data-paso="medicion-plasma"] .lupa header b { font-size: 16px; }
+  #app[data-paso="medicion-plasma"] .lupa header small { font-size: 13px; }
+  #app[data-paso="medicion-plasma"] .lupa .leyenda-lupa { font-size: 14px; gap: 6px 14px; padding: 10px 14px; }
+  #app[data-paso="medicion-plasma"] .lupa .leyenda-lupa i { width: 10px; height: 10px; }
+}
 #app[data-presentando="1"]:not([data-panel-pres="1"]) #instrumentos { display: none; }
 #app[data-presentando="1"] #instrumentos { bottom: calc(var(--pres-h) + 24px); }
 #app[data-presentando="1"] .lupa { bottom: calc(var(--pres-h) + 24px); right: 16px; }
@@ -432,7 +448,7 @@ select.campo, input.campo {
   display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 4px; white-space: nowrap;
   background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); font: 500 11.5px/1.3 var(--font-body);
 }
-.etq b { font: 600 10.5px/1 var(--font-data); color: var(--accent); }
+.etq b { font: 600 10.5px/1 var(--font-data); color: var(--accent); white-space: nowrap; }
 .etq.num { width: 24px; height: 24px; padding: 0; justify-content: center; border-radius: 50%; background: var(--accent); color: var(--accent-ink); border: 0; font: 600 12px/1 var(--font-data); transform: translate(-50%, -50%); }
 .etq:hover { border-color: var(--accent); z-index: 1; }
 
@@ -458,6 +474,7 @@ dialog.ficha::backdrop { background: rgba(8, 11, 16, 0.5); }
 .refs { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
 .refs a { color: var(--accent); word-break: break-all; }
 .lista-simple { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); max-width: 80ch; }
+.lista-celda { margin: 0; padding-left: 16px; display: grid; gap: 4px; }
 
 /* ---------- navegación móvil ---------- */
 .nav-movil { display: none; }
@@ -507,17 +524,23 @@ dialog.ficha::backdrop { background: rgba(8, 11, 16, 0.5); }
   .alarmas { left: 8px; right: 184px; width: auto; top: calc(var(--barra) + 52px); bottom: auto; }
   .etq { font-size: 10.5px; }
   .barra .boton#btn-presentar { padding: 0 10px; }
+  .estado { gap: 6px; }
+  .pastilla { min-width: 0; padding: 0 10px; }
+  #pastilla-txt { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   #app[data-presentando="1"] #visor { height: 100%; }
   #app[data-presentando="1"] .nav-movil, #app[data-presentando="1"] #instrumentos { display: none; }
   #app[data-presentando="1"] .lupa { top: calc(var(--barra) + 8px); bottom: auto; right: 8px; }
-  #app[data-presentando="1"] .pieza { left: 8px; right: 8px; top: auto; bottom: calc(var(--pres-h) + 110px); }
-  .barra-pres { left: 6px; right: 6px; bottom: 6px; padding: 6px 12px 10px; }
+  #app[data-presentando="1"] .pieza { left: 8px; right: 8px; top: auto; bottom: calc(var(--pres-h) + 16px); }
+  #app[data-presentando="1"] .lista-despiece { display: none; }
+  /* En el teléfono no caben a la vez la tarjeta del paso y la ficha de la pieza */
+  #app[data-presentando="1"]:has(.tarjeta-paso:not([hidden])) .pieza { display: none; }
+  .barra-pres { left: 6px; right: 6px; bottom: 6px; padding: 6px 12px 10px; min-height: 0; }
   .bp-cuerpo { grid-template-columns: 1fr; gap: 6px; }
   .bp-meta { grid-template-columns: auto auto auto; }
   .bp-fase { grid-column: auto; }
   .bp-num { font-size: 24px; }
   .bp-texto h2 { font-size: 18px; }
-  .bp-texto p { font-size: 13.5px; }
+  .bp-texto p { font-size: 13.5px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
   .bp-ctrl { justify-content: flex-end; flex-wrap: wrap; }
   .tarjeta-paso { top: calc(var(--barra) + 8px); left: 8px; width: calc(100% - 16px - 176px); padding: 10px 12px; }
   .tarjeta-paso h3 { font-size: 16px; }
@@ -543,7 +566,7 @@ dialog.ficha::backdrop { background: rgba(8, 11, 16, 0.5); }
       <span class="pastilla" id="pastilla" data-fase="reposo" data-at="0"><i></i><span id="pastilla-txt">Reposo</span></span>
       <span class="reloj" id="reloj">t = 00:00 · ×10</span>
       <button class="boton primario" id="btn-presentar" type="button">Presentar</button>
-      <button class="boton" id="btn-ficha" type="button" aria-haspopup="dialog">Ficha técnica</button>
+      <button class="boton" id="btn-ficha" type="button" aria-haspopup="dialog">Ficha<span>&nbsp;técnica</span></button>
     </div>
   </header>
 

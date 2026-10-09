@@ -8,7 +8,7 @@ export const FASES = [
   { id: 'purga', nombre: 'Purga con gas' },
   { id: 'rampa', nombre: 'Rampa de tensión' },
   { id: 'tratamiento', nombre: 'Tratamiento' },
-  { id: 'postpurga', nombre: 'Post-purga' },
+  { id: 'postpurga', nombre: 'Postpurga' },
   { id: 'listo', nombre: 'Listo para análisis' },
 ];
 
@@ -347,7 +347,7 @@ export class Proceso {
 
     // Alarmas
     const al = [];
-    if (this.O3amb > 0.1) al.push({ nivel: 'critica', texto: `Ozono ambiental ${fmt2(this.O3amb)} ppm (AI-503): cierre la puerta y espere la post-purga.` });
+    if (this.O3amb > 0.1) al.push({ nivel: 'critica', texto: `Ozono ambiental ${fmt2(this.O3amb)} ppm (AI-503): cierre la puerta y espere la postpurga.` });
     if (this.Tgas > 60) al.push({ nivel: 'aviso', texto: 'Temperatura del gas sobre 60 °C: fuera del intervalo informado para alimentos.' });
     if (this.plasma && this.des.limitada) al.push({ nivel: 'aviso', texto: 'La fuente opera en su límite de 500 W.' });
     if (this.fase === 'tratamiento' && !this.des.enciende) al.push({ nivel: 'aviso', texto: 'Sin descarga: la tensión no alcanza el encendido.' });

@@ -31,7 +31,7 @@ Documento generado por `build.mjs` a partir de `src/data/`. Respaldo «Revisión
 | 6 | Muestra en placa de vidrio o en envase | Reactor | Placa Petri de 90 mm o envase polimérico sellado | Sustrato tratado; en modo envase, el envase actúa como barrera adicional. | Revisión: Yadav y Roopesh (2020); Okyere et al. (2022) |
 | 7 | Barrera dieléctrica inferior | Reactor | Vidrio de sílice, Ø 130 × 2 mm | Segunda barrera; aísla la muestra del electrodo de tierra. | Revisión: Okyere et al. (2022) |
 | 8 | Electrodo de tierra | Reactor | Aluminio, Ø 100 × 10 mm | Electrodo conectado a tierra a través de la bobina de Rogowski y el condensador de medida. | Revisión: Puente-Díaz (2024) |
-| 9 | Plataforma elevadora micrométrica | Reactor | PTFE y husillo de nailon, cabezal de 0,01 mm | Fija la separación d entre la barrera y la muestra (ZI-701). | Revisión: Niemira et al. (2018) |
+| 9 | Plataforma elevadora micrométrica | Reactor | PTFE y husillo de nailon, cabezal de 0,01 mm | Fija la separación d entre la barrera y la muestra, de 1 a 20 mm (ZI-701). | Revisión: Niemira et al. (2018) |
 | 10 | Base con puertos | Reactor | PTFE | Soporta la pila de electrodos; aloja la entrada de gas, el termopar y la conexión de tierra. | Ingeniería |
 | 11 | Cuerpo de la cámara | Reactor | Policarbonato, Ø 180 × 170 mm | Contiene la atmósfera de trabajo y permite observar la descarga. | Revisión: Puente-Díaz (2024) |
 | 12 | Ventana de cuarzo para OES | Reactor | Cuarzo, Ø 25 mm | Deja pasar la emisión UV y visible hacia la fibra del espectrómetro. | Revisión: Burducea et al. (2023); Hueso et al. (2009) |
@@ -131,7 +131,7 @@ Documento generado por `build.mjs` a partir de `src/data/`. Respaldo «Revisión
 
 ## Supuestos de ingeniería
 
-- Frecuencia de 5 a 20 kHz: la revisión no la informa para las DBD.
+- Frecuencia de la fuente fija en 10 kHz al aplicar un caso (la fuente admite de 5 a 20 kHz): la revisión no la informa para las DBD.
 - Tensión de ruptura del aire con la correlación empírica V = 24,4·d + 6,53·√d (kV, d en cm) y una rigidez dieléctrica relativa aproximada para N₂, O₂, CO₂, Ar y He.
 - Potencia calculada con el modelo de capacitancias equivalentes de la DBD (ecuación de Manley).
 - Temperaturas del gas y del sustrato con modelos de primer orden ilustrativos, anclados al intervalo de 30 a 60 °C (Jiang et al., 2022) y al aumento de 28,9 °C a 1 000 W y 12 min (Siciliano et al., 2016).
